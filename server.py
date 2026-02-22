@@ -16,6 +16,9 @@ import urllib.request
 import urllib.parse
 import json
 import os
+import re
+import subprocess
+import platform
 
 PORT = 8080
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -136,34 +139,138 @@ def geo_lookup(ip: str) -> dict:
     raise RuntimeError("All sources failed — " + " | ".join(errors))
 
 
+# ─── Wi-Fi scan ───────────────────────────────────────────────────────────────
+
+def _auth_to_enc(auth: str) -> str:
+    a = auth.upper()
+    if 'WPA3' in a: return 'WPA3'
+    if 'WPA2' in a: return 'WPA2'
+    if 'WPA'  in a: return 'WPA'
+    if 'WEP'  in a: return 'WEP'
+    if 'OPEN' in a or 'NONE' in a or not a.strip(): return 'OPEN'
+    return 'WPA2'
+
+def _ch_to_band(ch: int) -> str:
+    if ch <= 13:  return '2.4 GHz'
+    if ch <= 177: return '5 GHz'
+    return '6 GHz'
+
+def _wifi_windows() -> list:
+    r = subprocess.run(
+        ['netsh', 'wlan', 'show', 'networks', 'mode=bssid'],
+        capture_output=True, timeout=12)
+    try:
+        text = r.stdout.decode('utf-8')
+    except UnicodeDecodeError:
+        text = r.stdout.decode('cp850', errors='replace')
+
+    nets = []
+    ssid = ''; auth = 'WPA2'
+    bssid = None; sig = 50; radio = ''; ch = 6
+
+    def flush():
+        nonlocal bssid
+        if bssid and ssid:
+            nets.append({'ssid': ssid, 'mac': bssid, 'sig': sig,
+                         'enc': _auth_to_enc(auth), 'ch': ch,
+                         'band': _ch_to_band(ch)})
+        bssid = None
+
+    for line in text.splitlines():
+        # SSID line (not BSSID)
+        m = re.match(r'^\s*SSID\s+\d+\s*:\s*(.*)$', line, re.IGNORECASE)
+        if m and 'BSSID' not in line.upper():
+            flush()
+            ssid = m.group(1).strip(); auth = 'WPA2'; ch = 6; radio = ''
+            continue
+        # Authentication / Ověřování
+        m = re.match(r'^\s*(?:Authentication|Ov[eě][rř]ov[aá]n[ií])\s*:\s*(.+)$', line, re.IGNORECASE)
+        if m: auth = m.group(1).strip(); continue
+        # BSSID
+        m = re.match(r'^\s*BSSID\s+\d+\s*:\s*([\da-fA-F:]+)', line, re.IGNORECASE)
+        if m: flush(); bssid = m.group(1).strip(); sig = 50; radio = ''; ch = 6; continue
+        # Signal / Signál
+        m = re.match(r'^\s*(?:Signal|Sign[aá]l)\s*:\s*(\d+)%', line, re.IGNORECASE)
+        if m: sig = int(m.group(1)); continue
+        # Radio type / Typ rádia
+        m = re.match(r'^\s*(?:Radio\s+type|Typ\s+r[aá]dia)\s*:\s*(.+)$', line, re.IGNORECASE)
+        if m: radio = m.group(1).strip(); continue
+        # Channel / Kanál
+        m = re.match(r'^\s*(?:Channel|Kan[aá]l)\s*:\s*(\d+)', line, re.IGNORECASE)
+        if m: ch = int(m.group(1)); continue
+    flush()
+    nets.sort(key=lambda n: -n['sig'])
+    return nets
+
+def _wifi_linux() -> list:
+    r = subprocess.run(
+        ['nmcli', '-t', '-f', 'SSID,BSSID,SIGNAL,SECURITY,CHAN,FREQ', 'dev', 'wifi', 'list'],
+        capture_output=True, timeout=12)
+    text = r.stdout.decode('utf-8', errors='replace')
+    nets = []
+    for line in text.splitlines():
+        # nmcli -t escapes colons in values as \: — split on unescaped colons
+        parts = re.split(r'(?<!\\):', line)
+        if len(parts) < 6: continue
+        ssid = parts[0].replace('\\:', ':') or '<Hidden>'
+        mac  = ':'.join(parts[1:7]) if len(parts) >= 8 else parts[1].replace('\\:', ':')
+        try:    sig = int(parts[7] if len(parts) >= 9 else parts[2])
+        except: sig = 50
+        sec  = (parts[8] if len(parts) >= 10 else parts[3]).upper()
+        try:    ch  = int(parts[9] if len(parts) >= 11 else parts[4])
+        except: ch  = 6
+        freq = parts[10] if len(parts) >= 12 else parts[5]
+        band = '5 GHz' if '5' in freq else ('6 GHz' if '6' in freq else '2.4 GHz')
+        enc  = ('WPA3' if 'WPA3' in sec else 'WPA2' if 'WPA2' in sec else
+                'WPA'  if 'WPA'  in sec else 'WEP'  if 'WEP'  in sec else 'OPEN')
+        nets.append({'ssid': ssid, 'mac': mac, 'sig': sig, 'enc': enc, 'ch': ch, 'band': band})
+    nets.sort(key=lambda n: -n['sig'])
+    return nets
+
+def wifi_scan() -> list:
+    if platform.system() == 'Windows':
+        return _wifi_windows()
+    return _wifi_linux()
+
+
 # ─── HTTP handler ─────────────────────────────────────────────────────────────
 
 class ZcrackHandler(http.server.SimpleHTTPRequestHandler):
-    """Serves static files from BASE and handles /api/geo."""
+    """Serves static files from BASE and handles /api/geo and /api/wifi."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=BASE, **kwargs)
 
+    def _json(self, payload: dict):
+        body = json.dumps(payload).encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Cache-Control', 'no-store')
+        self.end_headers()
+        self.wfile.write(body)
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
+
+        if parsed.path == '/api/wifi':
+            try:
+                nets = wifi_scan()
+                self._json({'ok': True, 'data': nets})
+            except Exception as exc:
+                self._json({'ok': False, 'error': str(exc)})
+            print(f'[wifi] scanned → {len(nets) if "nets" in dir() else 0} networks')
+            return
 
         if parsed.path == "/api/geo":
             params = urllib.parse.parse_qs(parsed.query)
             ip = (params.get("ip") or [""])[0].strip()
 
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Cache-Control", "no-store")
-            self.end_headers()
-
             try:
                 if not ip:
-                    raise ValueError("No IP address provided")
-                payload = {"ok": True,  "data": geo_lookup(ip)}
+                    raise ValueError('No IP address provided')
+                self._json({'ok': True,  'data': geo_lookup(ip)})
             except Exception as exc:
-                payload = {"ok": False, "error": str(exc)}
-
-            self.wfile.write(json.dumps(payload).encode("utf-8"))
+                self._json({'ok': False, 'error': str(exc)})
             return
 
         # Fall through to built-in static file serving

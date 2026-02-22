@@ -1535,45 +1535,86 @@ function closeTool(name){
 
 // ─── WIFI SNIFFER TOOL ────────────────────────────────────────────
 (function(){
-  let wIv=null,scanDir=1,scanFill=0;
-  const SSIDS=['VODAFONE','T-Mobile','O2_WiFi','ASUS_AC88','TP-Link_5G','FRITZ!Box','HomeNetwork','OfficeWLAN','Guest_Access','IoT_Hub','SKY_NET','BT-HUB6','Linksys','NETGEAR72','D-Link_DIR','Xfinity','UPC','HUAWEI_AP','Xiaomi_R3G','ARCHER_C7'];
-  const ENCS=['WPA3','WPA2','WPA2','WPA2','WPA2','WPA','WEP','OPEN'];
-  const CHS=[1,2,3,4,5,6,7,8,9,10,11,36,40,44,48,52,100,149,153,157];
-  const BANDS=['2.4 GHz','5 GHz','6 GHz'];
-  function rh(n){return Array.from({length:n},()=>'0123456789ABCDEF'[Math.random()*16|0]).join('');}
-  function ssid(){return SSIDS[Math.random()*SSIDS.length|0]+'-'+rh(4);}
-  function bssid(){return[0,0,0,0,0,0].map(()=>rh(2)).join(':');}
-  function sig(){return Math.floor(Math.random()*75+10);}
+  let wIv=null,scanDir=1,scanFill=0,liveMode=false;
   let nets=[];
+
+  // ── render ──
   function render(){
     const list=document.getElementById('wifi-list');if(!list)return;
     list.innerHTML='';
     nets.forEach(n=>{
-      const bars=Math.ceil(n.sig/25);
+      const bars=Math.min(4,Math.ceil(n.sig/25));
       const sigH=[1,2,3,4].map(i=>`<div class="wifi-bar${i<=bars?' on':''}" style="height:${i*4+2}px"></div>`).join('');
       let ec,bc;
       if(n.enc==='OPEN'){ec='#ff5f5f';bc='rgba(255,80,80,.25)';}
       else if(n.enc==='WEP'){ec='#ffd060';bc='rgba(255,200,50,.2)';}
       else{ec='#4ffe98';bc='rgba(80,255,140,.15)';}
       const div=document.createElement('div');div.className='wifi-network';
-      div.innerHTML=`<div class="wifi-signal">${sigH}</div><div class="wifi-ssid">${n.ssid}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="wifi-enc-badge" style="color:${ec};border-color:${ec};background:${bc}">${n.enc}</span><div class="wifi-info">CH ${n.ch} · ${n.band}</div><div class="wifi-info" style="font-size:8px;opacity:.55">${n.mac}</div></div>`;
+      div.innerHTML=`<div class="wifi-signal">${sigH}</div><div class="wifi-ssid">${n.ssid||'<Hidden>'}</div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="wifi-enc-badge" style="color:${ec};border-color:${ec};background:${bc}">${n.enc}</span><div class="wifi-info">CH ${n.ch} · ${n.band}</div><div class="wifi-info" style="font-size:8px;opacity:.55">${n.mac}</div></div>`;
       list.appendChild(div);
     });
     const cnt=document.getElementById('wifi-net-count');if(cnt)cnt.textContent=nets.length+' NET';
   }
-  function generateNets(){
-    nets=[];
-    for(let i=0;i<Math.floor(Math.random()*9+6);i++)nets.push({ssid:ssid(),mac:bssid(),sig:sig(),enc:ENCS[Math.random()*ENCS.length|0],ch:CHS[Math.random()*CHS.length|0],band:BANDS[Math.random()*BANDS.length|0]});
-    nets.sort((a,b)=>b.sig-a.sig);render();
-  }
+
+  // ── animation tick: slightly fluctuate signals ──
   function tick(){
-    scanFill+=scanDir*3;if(scanFill>=100){scanFill=100;scanDir=-1;}if(scanFill<=0){scanFill=0;scanDir=1;}
+    if(!liveMode){
+      scanFill+=scanDir*3;if(scanFill>=100){scanFill=100;scanDir=-1;}if(scanFill<=0){scanFill=0;scanDir=1;}
+    } else { scanFill=100; }
     const sf=document.getElementById('wifi-scan-fill');if(sf)sf.style.width=scanFill+'%';
-    if(Math.random()<0.14){const i=Math.random()*nets.length|0;if(nets[i]){nets[i].sig=Math.max(5,Math.min(100,nets[i].sig+(Math.random()*22-11)|0));render();}}
-    if(Math.random()<0.06){nets.push({ssid:ssid(),mac:bssid(),sig:sig(),enc:ENCS[Math.random()*ENCS.length|0],ch:CHS[Math.random()*CHS.length|0],band:BANDS[Math.random()*BANDS.length|0]});nets.sort((a,b)=>b.sig-a.sig);if(nets.length>20)nets.pop();render();}
-    if(Math.random()<0.03&&nets.length>4){nets.splice(Math.random()*nets.length|0,1);render();}
+    if(nets.length&&Math.random()<0.18){
+      const i=Math.random()*nets.length|0;
+      if(nets[i]){nets[i].sig=Math.max(5,Math.min(100,nets[i].sig+((Math.random()*10-5)|0)));render();}
+    }
   }
-  window._startWifi=function(){generateNets();if(!wIv)wIv=setInterval(tick,180);};
+
+  // ── fallback fake data ──
+  const _SSIDS=['VODAFONE','T-Mobile','O2_WiFi','ASUS_AC88','TP-Link_5G','FRITZ!Box','HomeNetwork','OfficeWLAN','IoT_Hub','NETGEAR72'];
+  const _ENCS=['WPA3','WPA2','WPA2','WPA2','WPA2','WPA','WEP','OPEN'];
+  const _CHS=[1,2,3,6,9,11,36,40,48,149,153];
+  function rh(n){return Array.from({length:n},()=>'0123456789ABCDEF'[Math.random()*16|0]).join('');}
+  function fakeScan(){
+    nets=[];
+    for(let i=0;i<Math.floor(Math.random()*7+5);i++){
+      const ch=_CHS[Math.random()*_CHS.length|0];
+      const band=ch<=13?'2.4 GHz':'5 GHz';
+      nets.push({ssid:_SSIDS[Math.random()*_SSIDS.length|0]+'-'+rh(4),
+        mac:[0,0,0,0,0,0].map(()=>rh(2)).join(':'),
+        sig:Math.floor(Math.random()*75+10),
+        enc:_ENCS[Math.random()*_ENCS.length|0],ch,band});
+    }
+    nets.sort((a,b)=>b.sig-a.sig);
+  }
+
+  // ── live scan via server.py /api/wifi ──
+  async function liveScan(){
+    const lbl=document.getElementById('wifi-scan-label');
+    if(lbl){lbl.textContent='SCANNING...';lbl.style.color='';}
+    try{
+      const r=await fetch('/api/wifi',{signal:AbortSignal.timeout(14000)});
+      const body=await r.json();
+      if(!body.ok) throw new Error(body.error||'server error');
+      if(!body.data.length) throw new Error('no networks returned');
+      nets=body.data;
+      liveMode=true;
+      if(lbl){lbl.textContent='LIVE ↺';lbl.style.color='var(--green)';}
+      scanFill=100;
+    }catch(e){
+      liveMode=false;
+      fakeScan();
+      if(lbl){lbl.textContent='DEMO ↺';lbl.style.color='var(--yellow)';}
+    }
+    nets.sort((a,b)=>b.sig-a.sig);
+    render();
+  }
+
+  // ── rescan on label tap ──
+  document.addEventListener('DOMContentLoaded',()=>{
+    const lbl=document.getElementById('wifi-scan-label');
+    if(lbl){lbl.style.cursor='pointer';lbl.title='Tap to rescan';lbl.addEventListener('click',()=>liveScan());}
+  });
+
+  window._startWifi=function(){liveScan();if(!wIv)wIv=setInterval(tick,180);};
   window._stopWifi=function(){if(wIv){clearInterval(wIv);wIv=null;}};
 })();
 
