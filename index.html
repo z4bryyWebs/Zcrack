@@ -1655,18 +1655,72 @@ function closeTool(name){
     return null;
   }
 
-  // ── Local-server lookup — no CORS, no third-party browser requests ──
-  // server.py handles the outbound API calls server-side.
-  async function geoLookup(ip){
+  // ── Geo lookup: try local server first, fall back to direct CORS APIs ──
+  const DIRECT_SOURCES=[
+    {
+      name:'ipwho.is',
+      url:ip=>`https://ipwho.is/${encodeURIComponent(ip)}`,
+      parse:d=>{
+        if(d.success===false) throw new Error(d.message||'fail');
+        const conn=d.connection||{};const tz=d.timezone;
+        return{ip:d.ip,city:d.city,region:d.region,country:d.country,cc:d.country_code,
+          isp:conn.isp||conn.org||d.org||'?',lat:d.latitude,lon:d.longitude,
+          tz:typeof tz==='object'?tz.id:tz||'?',_src:'ipwho.is'};
+      }
+    },
+    {
+      name:'freeipapi.com',
+      url:ip=>`https://freeipapi.com/api/json/${encodeURIComponent(ip)}`,
+      parse:d=>{
+        if(!d.latitude&&!d.longitude) throw new Error('no geo data');
+        return{ip:d.ipAddress,city:d.cityName,region:d.regionName,country:d.countryName,
+          cc:d.countryCode,isp:d.asn||d.isp||'?',lat:d.latitude,lon:d.longitude,
+          tz:d.timeZone||'?',_src:'freeipapi.com'};
+      }
+    },
+    {
+      name:'ipapi.co',
+      url:ip=>`https://ipapi.co/${encodeURIComponent(ip)}/json/`,
+      parse:d=>{
+        if(d.error) throw new Error(d.reason||'fail');
+        return{ip:d.ip,city:d.city,region:d.region,country:d.country_name,cc:d.country_code,
+          isp:d.org||'?',lat:d.latitude,lon:d.longitude,tz:d.timezone||'?',_src:'ipapi.co'};
+      }
+    },
+  ];
+
+  async function _fetchJSON(url,timeout=8000){
     const ctrl=new AbortController();
-    const tid=setTimeout(()=>ctrl.abort(),10000);
-    let r;
+    const tid=setTimeout(()=>ctrl.abort(),timeout);
     try{
-      r=await fetch(`/api/geo?ip=${encodeURIComponent(ip)}`,{signal:ctrl.signal});
+      const r=await fetch(url,{signal:ctrl.signal});
+      const text=await r.text();
+      if(!text||text[0]==='<') throw new Error('Not JSON');
+      return JSON.parse(text);
     }finally{clearTimeout(tid);}
-    const body=await r.json();
-    if(!body.ok) throw new Error(body.error||'Server error');
-    return body.data;
+  }
+
+  async function geoLookup(ip){
+    // 1) Try local server.py proxy (no CORS issues, best accuracy)
+    try{
+      const body=await _fetchJSON(`/api/geo?ip=${encodeURIComponent(ip)}`,10000);
+      if(body&&body.ok) return body.data;
+      if(body&&!body.ok) throw new Error(body.error||'Server error');
+    }catch(e){
+      // If it's a real server error (not just "not running"), bubble it up
+      if(e.message&&!e.message.includes('JSON')&&!e.message.includes('NetworkError')&&!e.message.includes('Failed to fetch')&&!e.message.includes('Load failed')&&!e.message.includes('aborted')){
+        // server returned a structured error — still try direct fallback
+      }
+    }
+    // 2) Fallback: direct browser CORS API calls
+    const errors=[];
+    for(const src of DIRECT_SOURCES){
+      try{
+        const d=await _fetchJSON(src.url(ip),9000);
+        return src.parse(d);
+      }catch(e){errors.push(src.name+': '+e.message);}
+    }
+    throw new Error('All sources failed — '+errors.join(' | '));
   }
 
   function renderGeoResult(info){
