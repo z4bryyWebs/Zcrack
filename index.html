@@ -76,28 +76,110 @@ input,button{font-family:inherit;}
   padding-top:var(--safe-top);
   padding-bottom:var(--safe-bot);
   transition:opacity .7s ease;
+  overflow:hidden;
 }
 #login-screen.fade-out{opacity:0;pointer-events:none;}
+/* scanlines + radial glow */
 #login-screen::before{
   content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,255,140,.025) 3px,rgba(0,255,140,.025) 4px);
-  animation:scan-move 10s linear infinite;
+  background:
+    repeating-linear-gradient(to bottom,transparent 0,transparent 3px,rgba(0,255,140,.018) 3px,rgba(0,255,140,.018) 4px),
+    radial-gradient(ellipse 85% 60% at 50% 35%,rgba(0,90,50,.4) 0%,transparent 72%);
+  animation:scan-move 8s linear infinite;
+}
+/* circuit grid */
+#login-screen::after{
+  content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(80,255,140,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(80,255,140,.04) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 30%,transparent 80%);
+  -webkit-mask-image:radial-gradient(ellipse 70% 70% at 50% 50%,black 30%,transparent 80%);
+}
+/* ── BOOT SEQUENCE OVERLAY ───── */
+#boot-seq{
+  position:absolute;inset:0;z-index:4;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 24px;gap:0;
+  transition:opacity .65s ease;
+}
+#boot-seq.done{opacity:0;pointer-events:none;}
+#boot-skull-wrap{
+  width:78px;height:78px;
+  border:1px solid var(--border-hi);
+  border-radius:18px;
+  background:rgba(80,255,140,.06);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 40px rgba(80,255,140,.25),0 0 90px rgba(80,255,140,.1),inset 0 0 20px rgba(80,255,140,.06);
+  margin-bottom:20px;
+  animation:glow-pulse 2.4s ease-in-out infinite;
+}
+#boot-skull-wrap svg{width:44px;height:44px;stroke:var(--green);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;}
+#boot-title-big{
+  font-size:clamp(32px,9vw,44px);font-weight:800;letter-spacing:12px;
+  color:var(--green);
+  text-shadow:0 0 30px rgba(80,255,140,.85),0 0 80px rgba(80,255,140,.4),0 0 160px rgba(80,255,140,.18);
+  margin-bottom:6px;
+  font-family:-apple-system,'SF Pro Display','Helvetica Neue',monospace;
+}
+#boot-sub{
+  font-size:9px;letter-spacing:5px;color:var(--text-muted);
+  text-transform:uppercase;margin-bottom:28px;
+}
+#boot-lines{
+  width:min(92vw,370px);
+  display:flex;flex-direction:column;gap:5px;
+  margin-bottom:22px;
+  min-height:130px;
+}
+.boot-line{
+  font-size:10.5px;letter-spacing:1.5px;
+  color:var(--text-dim);
+  font-family:'Courier New',monospace;
+  opacity:0;
+  animation:float-up .25s ease forwards;
+}
+.boot-line.ok{color:var(--green);}
+.boot-line.hdr{color:var(--cyan);font-size:11px;letter-spacing:2px;font-weight:600;}
+.boot-line.err{color:var(--red);}
+#boot-bar-wrap{
+  width:min(92vw,370px);height:3px;
+  background:rgba(80,255,140,.1);
+  border-radius:4px;overflow:hidden;
+  margin-bottom:6px;
+}
+#boot-bar-fill{
+  height:100%;width:0%;
+  background:linear-gradient(to right,var(--green2),var(--green),var(--cyan));
+  border-radius:4px;
+  transition:width .2s ease;
+  box-shadow:0 0 14px var(--green);
+}
+#boot-pct{
+  font-size:9px;letter-spacing:3px;color:var(--text-dim);
+  font-family:'Courier New',monospace;
 }
 
 #login-box{
-  position:relative;z-index:1;
+  position:relative;z-index:3;
   width:min(94vw,400px);
   background:var(--surface);
-  border:1px solid rgba(80,255,140,.18);
+  border:1px solid rgba(80,255,140,.22);
   border-radius:var(--radius-card);
   padding:32px 24px 26px;
   display:flex;flex-direction:column;gap:0;
   max-height:calc(var(--vvh,100vh) - var(--safe-top) - var(--safe-bot) - 28px);
   overflow:visible;
+  box-shadow:0 0 60px rgba(80,255,140,.12),0 0 120px rgba(80,255,140,.05),inset 0 0 30px rgba(80,255,140,.03);
   animation:border-anim 4s ease-in-out infinite;
-  -webkit-backdrop-filter:blur(24px) saturate(160%);
-  backdrop-filter:blur(24px) saturate(160%);
+  -webkit-backdrop-filter:blur(28px) saturate(180%);
+  backdrop-filter:blur(28px) saturate(180%);
+  opacity:0;
+  transform:translateY(22px);
+  transition:opacity .55s ease,transform .55s ease;
 }
+#login-box.visible{opacity:1;transform:translateY(0);}
 #login-box.glitch{animation:glitch .32s ease;border-color:var(--red)!important;box-shadow:0 0 22px rgba(255,60,60,.28)!important;}
 
 #login-box::before,#login-box::after,
@@ -121,22 +203,23 @@ input,button{font-family:inherit;}
   animation:bar-scan 2s ease-in-out infinite;
 }
 
-#login-logo{text-align:center;margin-bottom:28px;}
+#login-logo{text-align:center;margin-bottom:24px;}
 #login-logo .logo-icon{
-  width:44px;height:44px;
+  width:52px;height:52px;
   border:1px solid var(--border-hi);
-  border-radius:10px;
+  border-radius:13px;
   background:rgba(80,255,140,.07);
   display:flex;align-items:center;justify-content:center;
-  font-size:22px;
-  box-shadow:0 0 20px rgba(80,255,140,.18);
-  margin:0 auto 10px;
+  box-shadow:0 0 28px rgba(80,255,140,.24),0 0 60px rgba(80,255,140,.1),inset 0 0 14px rgba(80,255,140,.06);
+  margin:0 auto 12px;
+  animation:glow-pulse 3s ease-in-out infinite;
 }
+#login-logo .logo-icon svg{width:28px;height:28px;stroke:var(--green);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
 #login-logo .logo-title{
   display:block;
-  font-size:28px;font-weight:700;letter-spacing:8px;
+  font-size:30px;font-weight:800;letter-spacing:9px;
   color:var(--green);
-  text-shadow:0 0 24px rgba(80,255,140,.7),0 0 60px rgba(80,255,140,.25);
+  text-shadow:0 0 28px rgba(80,255,140,.8),0 0 70px rgba(80,255,140,.3);
 }
 #login-logo .logo-sub{
   display:block;margin-top:5px;
@@ -218,23 +301,40 @@ input,button{font-family:inherit;}
   cursor:pointer;transition:opacity .6s ease;
 }
 #vid-screen.fade-out{opacity:0;pointer-events:none;}
-#loading-vid{width:100%;height:100%;object-fit:cover;display:block;}
+#vid-screen.hidden{display:none;}
+#loading-vid{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;display:block;
+}
 #vid-screen::after{
   content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(to bottom,transparent 0,transparent 2px,rgba(0,0,0,.1) 2px,rgba(0,0,0,.1) 4px);
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);
   pointer-events:none;z-index:1;
 }
 #vid-skip{
   position:absolute;
   bottom:calc(var(--safe-bot) + 30px);
   right:max(22px,calc(var(--safe-r) + 16px));
-  color:rgba(80,255,140,.5);font-size:11px;letter-spacing:2px;
-  z-index:2;pointer-events:none;font-family:'Courier New',monospace;
+  z-index:3;
+  color:rgba(80,255,140,.6);font-size:11px;letter-spacing:2px;
+  font-family:'Courier New',monospace;
+  pointer-events:none;
   animation:blink 1.4s ease-in-out infinite;
+}
+#vid-tap-hint{
+  position:absolute;
+  bottom:calc(var(--safe-bot) + 54px);
+  left:50%;transform:translateX(-50%);
+  z-index:3;
+  color:rgba(255,255,255,.28);font-size:10px;letter-spacing:3px;
+  font-family:'Courier New',monospace;
+  pointer-events:none;
+  white-space:nowrap;
 }
 #vid-vignette{
   position:absolute;inset:0;
-  background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.75) 100%);
+  background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.82) 100%);
   pointer-events:none;z-index:2;
 }
 
@@ -534,12 +634,26 @@ input,button{font-family:inherit;}
 
 <!-- LOGIN SCREEN -->
 <div id="login-screen">
+  <!-- ── BOOT SEQUENCE ── -->
+  <div id="boot-seq">
+    <div id="boot-skull-wrap">
+      <svg viewBox="0 0 24 24"><path d="M12 3a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V18a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 5 10a7 7 0 0 1 7-7z"/><line x1="9" y1="18" x2="9" y2="21"/><line x1="15" y1="18" x2="15" y2="21"/><circle cx="9.5" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="14.5" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>
+    </div>
+    <div id="boot-title-big">ZCRACK</div>
+    <div id="boot-sub">Penetration Suite &nbsp;·&nbsp; v2.0 &nbsp;·&nbsp; zabry0</div>
+    <div id="boot-lines"></div>
+    <div id="boot-bar-wrap"><div id="boot-bar-fill"></div></div>
+    <div id="boot-pct">0%</div>
+  </div>
+  <!-- ── LOGIN FORM ── -->
   <div id="login-box">
     <span class="corner-bl"></span>
     <span class="corner-br"></span>
     <div id="login-scan-bar"></div>
     <div id="login-logo">
-      <div class="logo-icon">💀</div>
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 3a7 7 0 0 1 7 7c0 2.6-1.4 4.9-3.5 6.2V18a1 1 0 0 1-1 1h-5a1 1 0 0 1-1-1v-1.8A7 7 0 0 1 5 10a7 7 0 0 1 7-7z"/><line x1="9" y1="18" x2="9" y2="21"/><line x1="15" y1="18" x2="15" y2="21"/><circle cx="9.5" cy="10" r="1.5" fill="currentColor" stroke="none"/><circle cx="14.5" cy="10" r="1.5" fill="currentColor" stroke="none"/></svg>
+      </div>
       <span class="logo-title">ZCRACK</span>
       <span class="logo-sub">Authorized Access Only &nbsp;·&nbsp; v2.0</span>
       <span class="logo-line"></span>
@@ -547,14 +661,14 @@ input,button{font-family:inherit;}
     <div class="login-field">
       <label>Operator ID</label>
       <div class="login-field-row">
-        <span class="field-prefix">⌀</span>
+        <span class="field-prefix" style="color:var(--dim);font-family:'Courier New',monospace;padding:0 12px">&gt;</span>
         <input id="inp-user" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="username"/>
       </div>
     </div>
     <div class="login-field">
       <label>Auth Token</label>
       <div class="login-field-row">
-        <span class="field-prefix">🔑</span>
+        <span class="field-prefix" style="color:var(--dim);font-family:'Courier New',monospace;padding:0 12px">#</span>
         <input id="inp-pass" type="password" autocomplete="off" placeholder="password"/>
       </div>
     </div>
@@ -566,9 +680,12 @@ input,button{font-family:inherit;}
 
 <!-- VIDEO LOADING -->
 <div id="vid-screen">
-  <video id="loading-vid" src="loadingvid.mp4" playsinline preload="auto"></video>
+  <video id="loading-vid" src="loadingvid.mp4"
+    playsinline muted webkit-playsinline
+    preload="auto" x-webkit-airplay="deny"></video>
   <div id="vid-vignette"></div>
-  <div id="vid-skip">TAP TO SKIP ▶</div>
+  <div id="vid-tap-hint">TAP ANYWHERE TO SKIP</div>
+  <div id="vid-skip">▶ SKIP</div>
 </div>
 
 <!-- CANVAS -->
@@ -789,10 +906,13 @@ window.addEventListener('orientationchange',()=>setTimeout(resize,120));
       loginBtn.textContent='AUTHENTICATED...';
       loginBtn.classList.add('loading');
       loginErr.classList.remove('show');
+      // Play IMMEDIATELY inside user-gesture (iOS requires this)
+      const vid = document.getElementById('loading-vid');
+      vid.play().catch(()=>{
+        document.getElementById('vid-skip').textContent = '▶ TAP TO PLAY';
+      });
       setTimeout(()=>{
         loginScreen.classList.add('fade-out');
-        const vid = document.getElementById('loading-vid');
-        vid.play().catch(()=>{ document.getElementById('vid-skip').textContent = 'TAP TO START ▶'; });
         setTimeout(()=>{ loginScreen.style.display='none'; }, 720);
       }, 600);
     } else {
@@ -813,7 +933,65 @@ window.addEventListener('orientationchange',()=>setTimeout(resize,120));
   loginBtn.addEventListener('click', doLogin);
   inpPass.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
   inpUser.addEventListener('keydown', e=>{ if(e.key==='Enter') inpPass.focus(); });
-  setTimeout(()=>inpUser.focus(), 300);
+  // focus handled by boot sequence
+})();
+
+// ─── BOOT SEQUENCE ───────────────────────────────────────────────
+(function(){
+  const seq      = document.getElementById('boot-seq');
+  const linesEl  = document.getElementById('boot-lines');
+  const fillEl   = document.getElementById('boot-bar-fill');
+  const pctEl    = document.getElementById('boot-pct');
+  const loginBox = document.getElementById('login-box');
+
+  const LINES = [
+    {t:'hdr', s:'ZCRACK OS v2.0 — SYSTEM BOOT'},
+    {t:'ok',  s:'▸ Kernel modules ............. [OK]'},
+    {t:'ok',  s:'▸ Secure tunnel .............. [OK]'},
+    {t:'ok',  s:'▸ AES-256-GCM encryption ...... [OK]'},
+    {t:'ok',  s:'▸ Firewall bypass ............. [OK]'},
+    {t:'ok',  s:'▸ Operator interface .......... [OK]'},
+    {t:'ok',  s:'▸ Encrypted vault ............. [OK]'},
+    {t:'hdr', s:'ALL SYSTEMS NOMINAL — AUTHENTICATE'},
+  ];
+  const DELAYS = [0, 130, 220, 320, 420, 520, 610, 720];
+
+  function addLine(cfg, idx){
+    const el = document.createElement('div');
+    el.className = 'boot-line ' + (cfg.t||'');
+    el.textContent = cfg.s;
+    linesEl.appendChild(el);
+    const pct = Math.round((idx + 1) / LINES.length * 85);
+    fillEl.style.width = pct + '%';
+    pctEl.textContent = pct + '%';
+  }
+
+  // Schedule each line
+  LINES.forEach((cfg, i) => setTimeout(()=>addLine(cfg, i), 400 + DELAYS[i]));
+
+  // After last line, fill to 100% then show login
+  const total = 400 + DELAYS[LINES.length - 1] + 200;
+  setTimeout(()=>{
+    let p = 85;
+    const iv = setInterval(()=>{
+      p = Math.min(100, p + 3);
+      fillEl.style.width = p + '%';
+      pctEl.textContent = p + '%';
+      if(p >= 100){ clearInterval(iv); revealLogin(); }
+    }, 18);
+  }, total);
+
+  function revealLogin(){
+    setTimeout(()=>{
+      seq.classList.add('done');
+      loginBox.classList.add('visible');
+      // auto-focus username field after transition
+      setTimeout(()=>{
+        const u = document.getElementById('inp-user');
+        if(u) u.focus();
+      }, 560);
+    }, 300);
+  }
 })();
 
 // ─── VIDEO LOADING SCREEN ────────────────────────────────────────
