@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python cache (main.py)
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Secrets / env
+.env
+*.env
+
+# Build / dist
+dist/
+build/

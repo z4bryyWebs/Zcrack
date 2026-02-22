@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <filter id="glow-strong" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-eye" x="-80%" y="-80%" width="360%" height="360%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="scanlines" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="4" height="1" fill="rgba(0,0,0,0.35)"/>
+    </pattern>
+    <radialGradient id="eye-glow-l" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00ffe0" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#00c8a0" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#00ffe0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="eye-glow-r" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00ffe0" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#00c8a0" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#00ffe0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="skull-ambient" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#003828" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- app bg -->
+  <rect width="512" height="512" rx="88" fill="#000000"/>
+  <rect width="512" height="512" rx="88" fill="url(#scanlines)" opacity="0.35"/>
+
+  <!-- ambient glow behind skull -->
+  <ellipse cx="256" cy="240" rx="190" ry="200" fill="url(#skull-ambient)">
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="3s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <!-- ── SKULL BODY ── angular DedSec polygon -->
+  <polygon
+    points="182,62  330,62  376,90  396,170  388,274  360,318  334,336  308,348  204,348  178,336  152,318  124,274  116,170  136,90"
+    fill="#0b0f0d" stroke="#1affe0" stroke-width="3.5" filter="url(#glow-soft)"
+  />
+  <polygon
+    points="190,72  322,72  366,98  384,174  376,270  350,312  326,328  306,342  206,342  186,328  162,312  136,270  128,174  146,98"
+    fill="#060a08"
+  />
+
+  <!-- brow ridge -->
+  <polygon points="150,158  362,158  372,176  140,176" fill="#0e1410" stroke="#0ec898" stroke-width="1.5" filter="url(#glow-soft)"/>
+
+  <!-- ── LEFT EYE SOCKET ── angular octagon -->
+  <polygon points="158,185  228,185  240,197  240,260  228,272  158,272  146,260  146,197" fill="#000000"/>
+  <polygon points="158,185  228,185  240,197  240,260  228,272  158,272  146,260  146,197"
+    fill="url(#eye-glow-l)" opacity="0.9" filter="url(#glow-eye)">
+    <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2.6s" repeatCount="indefinite"/>
+  </polygon>
+  <polygon points="158,185  228,185  240,197  240,260  228,272  158,272  146,260  146,197"
+    fill="none" stroke="#00ffe0" stroke-width="3.5" filter="url(#glow-strong)">
+    <animate attributeName="stroke-opacity" values="1;0.35;1" dur="2.6s" repeatCount="indefinite"/>
+  </polygon>
+  <!-- crosshair subtle detail -->
+  <line x1="193" y1="185" x2="193" y2="272" stroke="#00c8a0" stroke-width="1" opacity="0.25"/>
+  <line x1="146" y1="228" x2="240" y2="228" stroke="#00c8a0" stroke-width="1" opacity="0.25"/>
+
+  <!-- ── RIGHT EYE SOCKET ── -->
+  <polygon points="284,185  354,185  366,197  366,260  354,272  284,272  272,260  272,197" fill="#000000"/>
+  <polygon points="284,185  354,185  366,197  366,260  354,272  284,272  272,260  272,197"
+    fill="url(#eye-glow-r)" opacity="0.9" filter="url(#glow-eye)">
+    <animate attributeName="opacity" values="0.9;0.35;0.9" dur="2.6s" begin="0.35s" repeatCount="indefinite"/>
+  </polygon>
+  <polygon points="284,185  354,185  366,197  366,260  354,272  284,272  272,260  272,197"
+    fill="none" stroke="#00ffe0" stroke-width="3.5" filter="url(#glow-strong)">
+    <animate attributeName="stroke-opacity" values="1;0.35;1" dur="2.6s" begin="0.35s" repeatCount="indefinite"/>
+  </polygon>
+  <line x1="319" y1="185" x2="319" y2="272" stroke="#00c8a0" stroke-width="1" opacity="0.25"/>
+  <line x1="272" y1="228" x2="366" y2="228" stroke="#00c8a0" stroke-width="1" opacity="0.25"/>
+
+  <!-- ── NOSE — angular inverted triangle ── -->
+  <polygon points="242,286  270,286  264,316  256,322  248,316" fill="#000" stroke="#0aaa88" stroke-width="2"/>
+
+  <!-- ── CHEEK circuit lines ── -->
+  <polyline points="146,212  118,212" fill="none" stroke="#00ffe0" stroke-width="2.5" opacity="0.7" filter="url(#glow-soft)"/>
+  <line x1="118" y1="212" x2="118" y2="240" stroke="#00ffe0" stroke-width="2.5" opacity="0.7" filter="url(#glow-soft)"/>
+  <line x1="108" y1="240" x2="146" y2="240" stroke="#00ffe0" stroke-width="1.5" opacity="0.5"/>
+  <polyline points="366,212  394,212" fill="none" stroke="#00ffe0" stroke-width="2.5" opacity="0.7" filter="url(#glow-soft)"/>
+  <line x1="394" y1="212" x2="394" y2="240" stroke="#00ffe0" stroke-width="2.5" opacity="0.7" filter="url(#glow-soft)"/>
+  <line x1="366" y1="240" x2="404" y2="240" stroke="#00ffe0" stroke-width="1.5" opacity="0.5"/>
+
+  <!-- animated data particles on cheek traces -->
+  <circle r="5" fill="#00ffe0" filter="url(#glow-strong)">
+    <animate attributeName="cx" values="146;118;118;108;146" dur="2.4s" repeatCount="indefinite"/>
+    <animate attributeName="cy" values="212;212;240;240;212" dur="2.4s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0.9;0.9;0.7;1" dur="2.4s" repeatCount="indefinite"/>
+  </circle>
+  <circle r="5" fill="#00ffe0" filter="url(#glow-strong)">
+    <animate attributeName="cx" values="366;394;394;404;366" dur="2.4s" begin="0.6s" repeatCount="indefinite"/>
+    <animate attributeName="cy" values="212;212;240;240;212" dur="2.4s" begin="0.6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="1;0.9;0.9;0.7;1" dur="2.4s" begin="0.6s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- ── JAW BLOCK ── -->
+  <polygon
+    points="178,352  334,352  350,372  348,408  326,422  186,422  164,408  162,372"
+    fill="#0b0f0d" stroke="#0ec898" stroke-width="2.5" filter="url(#glow-soft)"
+  />
+  <!-- jaw divider -->
+  <line x1="166" y1="378" x2="346" y2="378" stroke="#0ec898" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- TEETH — 5 angular blocks -->
+  <rect x="178" y="380" width="30" height="36" rx="2" fill="#020a06" stroke="#007755" stroke-width="1.5"/>
+  <rect x="216" y="380" width="30" height="36" rx="2" fill="#020a06" stroke="#007755" stroke-width="1.5"/>
+  <rect x="254" y="380" width="30" height="36" rx="2" fill="#020a06" stroke="#1affe0" stroke-width="2.5" filter="url(#glow-soft)">
+    <animate attributeName="stroke-opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="292" y="380" width="30" height="36" rx="2" fill="#020a06" stroke="#007755" stroke-width="1.5"/>
+  <rect x="330" y="380" width="30" height="36" rx="2" fill="#020a06" stroke="#007755" stroke-width="1.5"/>
+
+  <!-- ── SKULL OUTER TRACES — top crown ── -->
+  <polyline points="182,62  158,44  256,30  354,44  330,62"
+    fill="none" stroke="#00ffe0" stroke-width="2" opacity="0.65" filter="url(#glow-soft)"/>
+  <circle cx="158" cy="44" r="4.5" fill="#00ffe0" filter="url(#glow-strong)" opacity="0.85"/>
+  <circle cx="354" cy="44" r="4.5" fill="#00ffe0" filter="url(#glow-strong)" opacity="0.85"/>
+  <circle cx="256" cy="30" r="6" fill="#00ffe0" filter="url(#glow-strong)">
+    <animate attributeName="opacity" values="1;0.2;1" dur="1.8s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- side traces left -->
+  <polyline points="136,90  114,114  106,155  116,170" fill="none" stroke="#00c8a0" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="114" cy="114" r="3" fill="#00c8a0" opacity="0.7"/>
+  <!-- side traces right -->
+  <polyline points="376,90  398,114  406,155  396,170" fill="none" stroke="#00c8a0" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="398" cy="114" r="3" fill="#00c8a0" opacity="0.7"/>
+
+  <!-- ── FOREHEAD HEX NODE (DedSec signature) ── -->
+  <polygon points="256,84  272,93  272,111  256,120  240,111  240,93"
+    fill="#000" stroke="#00ffe0" stroke-width="3" filter="url(#glow-strong)">
+    <animate attributeName="stroke-opacity" values="1;0.15;1" dur="1.5s" repeatCount="indefinite"/>
+  </polygon>
+  <!-- hex inner lines -->
+  <line x1="256" y1="84" x2="256" y2="120" stroke="#00ffe0" stroke-width="1" opacity="0.4"/>
+  <line x1="240" y1="102" x2="272" y2="102" stroke="#00ffe0" stroke-width="1" opacity="0.4"/>
+  <circle cx="256" cy="102" r="4" fill="#00ffe0" filter="url(#glow-strong)">
+    <animate attributeName="opacity" values="1;0.1;1" dur="1.5s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- scanline final overlay -->
+  <rect width="512" height="512" rx="88" fill="url(#scanlines)" opacity="0.15"/>
+
+  <!-- ── TITLE ── -->
+  <text x="256" y="462" font-family="'Courier New',Courier,monospace" font-size="34"
+    font-weight="bold" fill="#00ffe0" text-anchor="middle" letter-spacing="10"
+    filter="url(#glow-soft)">ZCRACK</text>
+  <text x="256" y="482" font-family="'Courier New',Courier,monospace" font-size="10"
+    fill="#0aaa70" text-anchor="middle" letter-spacing="5" opacity="0.65">by zabry0</text>
+</svg>
