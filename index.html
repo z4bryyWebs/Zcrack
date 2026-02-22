@@ -1472,64 +1472,18 @@ function closeTool(name){
     return null;
   }
 
-  // ── Multi-source lookup with automatic fallback ──────────────────
-  // Sources are tried in order; normalise each response to a common shape.
-  const GEO_SOURCES=[
-    {
-      name:'ipwho.is',
-      url:ip=>`https://ipwho.is/${encodeURIComponent(ip)}`,
-      parse:d=>{
-        if(d.success===false) throw new Error(d.message||'fail');
-        return {ip:d.ip,city:d.city,region:d.region,country:d.country,
-          cc:d.country_code,isp:(d.connection&&(d.connection.isp||d.connection.org))||d.org||'?',
-          lat:d.latitude,lon:d.longitude,tz:(d.timezone&&d.timezone.id)||'?'};
-      }
-    },
-    {
-      name:'ip-api.com',
-      url:ip=>`https://pro.ip-api.com/json/${encodeURIComponent(ip)}?fields=status,message,country,countryCode,region,regionName,city,lat,lon,timezone,isp,org,as,query`,
-      // ip-api free tier is HTTP only; we proxy via a CORS-anywhere-style: instead try freeipapi
-      parse:d=>{
-        if(d.status==='fail') throw new Error(d.message||'fail');
-        return {ip:d.query,city:d.city,region:d.regionName,country:d.country,
-          cc:d.countryCode,isp:d.isp||d.org||'?',lat:d.lat,lon:d.lon,tz:d.timezone||'?'};
-      }
-    },
-    {
-      name:'freeipapi.com',
-      url:ip=>`https://freeipapi.com/api/json/${encodeURIComponent(ip)}`,
-      parse:d=>{
-        if(d.ipVersion===0||(!d.latitude&&!d.longitude)) throw new Error('no data');
-        return {ip:d.ipAddress,city:d.cityName,region:d.regionName,country:d.countryName,
-          cc:d.countryCode,isp:d.asn||d.isp||'?',lat:d.latitude,lon:d.longitude,tz:d.timeZone||'?'};
-      }
-    },
-    {
-      name:'ipapi.co',
-      url:ip=>`https://ipapi.co/${encodeURIComponent(ip)}/json/`,
-      parse:d=>{
-        if(d.error) throw new Error(d.reason||'fail');
-        return {ip:d.ip,city:d.city,region:d.region,country:d.country_name,
-          cc:d.country_code,isp:d.org||'?',lat:d.latitude,lon:d.longitude,tz:d.timezone||'?'};
-      }
-    },
-  ];
-
+  // ── Local-server lookup — no CORS, no third-party browser requests ──
+  // server.py handles the outbound API calls server-side.
   async function geoLookup(ip){
-    const errors=[];
-    for(const src of GEO_SOURCES){
-      try{
-        const ctrl=new AbortController();
-        const tid=setTimeout(()=>ctrl.abort(),5000);
-        const r=await fetch(src.url(ip),{signal:ctrl.signal});
-        clearTimeout(tid);
-        const d=await r.json();
-        const info=src.parse(d);
-        info._src=src.name;
-        return info;
-      }catch(e){errors.push(src.name+': '+(e.message||'err'));}
-    }
-    throw new Error('All sources failed — '+errors.join(' | '));
+    const ctrl=new AbortController();
+    const tid=setTimeout(()=>ctrl.abort(),10000);
+    let r;
+    try{
+      r=await fetch(`/api/geo?ip=${encodeURIComponent(ip)}`,{signal:ctrl.signal});
+    }finally{clearTimeout(tid);}
+    const body=await r.json();
+    if(!body.ok) throw new Error(body.error||'Server error');
+    return body.data;
   }
 
   function renderGeoResult(info){
@@ -1563,7 +1517,7 @@ function closeTool(name){
     }
 
     pending=true;
-    res.innerHTML=`<span style="opacity:.6;animation:blink .6s ease-in-out infinite">▶ SCANNING ${ip}... (trying ${GEO_SOURCES.length} sources)</span>`;
+    res.innerHTML=`<span style="opacity:.6;animation:blink .6s ease-in-out infinite">▶ SCANNING ${ip}...</span>`;
     try{
       const info=await geoLookup(ip);
       mLat=Number(info.lat);mLon=Number(info.lon);
