@@ -1,4 +1,4 @@
-const CACHE = 'zcrack-v5';
+const CACHE = 'zcrack-v6';
 // Large video is fetched on demand and cached by the fetch handler below.
 const ASSETS = ['./index.html', './manifest.json', './icon.svg'];
 

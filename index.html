@@ -10,6 +10,8 @@
   <link rel="apple-touch-icon" href="icon.svg"/>
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#000000"/>
+  <meta name="description" content="zcrack by zabry0 — Cyberpunk hacker-aesthetic PWA with IP geolocation, Wi-Fi scanner, remote terminal & spectrum analyser."/>
+  <link rel="icon" href="icon.svg" type="image/svg+xml"/>
   <style>
 /* ── TOKENS ─────────────────────────────────────────────────────── */
 :root{
@@ -259,7 +261,7 @@ input,button{font-family:inherit;}
   padding:13px 12px 13px 0;
   caret-color:var(--green);
   -webkit-user-select:text;user-select:text;
-  -webkit-appearance:none;border-radius:0;
+  -webkit-appearance:none;appearance:none;border-radius:0;
 }
 .login-field-row input::placeholder{color:rgba(138,255,200,.18);}
 
@@ -503,7 +505,7 @@ input,button{font-family:inherit;}
   border:1px solid rgba(80,255,140,.16);border-radius:10px;
   color:var(--text);font-family:'Courier New',monospace;font-size:16px;
   padding:11px 13px;outline:none;caret-color:var(--green);
-  -webkit-appearance:none;-webkit-user-select:text;user-select:text;
+  -webkit-appearance:none;appearance:none;-webkit-user-select:text;user-select:text;
   transition:border-color .2s,box-shadow .2s;
 }
 #globe-ip-input:focus{border-color:rgba(80,255,140,.5);box-shadow:0 0 12px rgba(80,255,140,.14);}
@@ -588,7 +590,7 @@ input,button{font-family:inherit;}
   flex:1;background:transparent;border:none;outline:none;
   color:var(--text);font-family:'Courier New',Courier,monospace;
   font-size:16px;caret-color:var(--green);
-  -webkit-appearance:none;-webkit-user-select:text;user-select:text;
+  -webkit-appearance:none;appearance:none;-webkit-user-select:text;user-select:text;
 }
 
 /* ── SOUND ──────────────────────────────────────────────────────── */
@@ -1536,6 +1538,8 @@ if('serviceWorker' in navigator){
 
 // ─── KEYBOARD SHORTCUTS ──────────────────────────────────────────
 document.addEventListener('keydown',e=>{
+  const tag=document.activeElement&&document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return;
   if(e.key==='c'||e.key==='C'){termBuffer=[];showToast('LOG CLEARED');}
   if(e.key==='p'||e.key==='P'){document.getElementById('btn-pause').click();}
   if(e.key==='t'||e.key==='T'){document.getElementById('btn-theme').click();}
