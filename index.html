@@ -302,7 +302,8 @@ input,button{font-family:inherit;}
   min-width:0;
 }
 .dock-tool:active{background:rgba(80,255,140,.18);transform:scale(.93);}
-.dock-tool .di{font-size:22px;line-height:1;display:block;}
+.dock-tool .di{width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
+.dock-tool .di svg{width:22px;height:22px;stroke:var(--green);flex-shrink:0;}
 .dock-tool .dl{
   font-size:8px;letter-spacing:1.5px;color:var(--text-dim);
   text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -585,16 +586,16 @@ input,button{font-family:inherit;}
     <div id="dock-wrap">
       <div id="dock-tools">
         <button class="dock-tool" id="btn-globe">
-          <span class="di">🌍</span><span class="dl">Globe</span>
+          <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/></svg></span><span class="dl">Globe</span>
         </button>
         <button class="dock-tool" id="btn-wifi">
-          <span class="di">📡</span><span class="dl">Wi-Fi</span>
+          <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 13a9 9 0 0 1 14 0"/><path d="M2 9.5a13 13 0 0 1 20 0"/></svg></span><span class="dl">Wi-Fi</span>
         </button>
         <button class="dock-tool" id="btn-remote">
-          <span class="di">💻</span><span class="dl">Remote</span>
+          <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="15" rx="2"/><polyline points="8,10 11,13 8,16"/><line x1="13" y1="16" x2="17" y2="16"/></svg></span><span class="dl">Remote</span>
         </button>
         <button class="dock-tool" id="btn-sound">
-          <span class="di">🎙</span><span class="dl">Sound</span>
+          <span class="di"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg></span><span class="dl">Sound</span>
         </button>
       </div>
       <div id="dock-util">
@@ -611,7 +612,7 @@ input,button{font-family:inherit;}
 <!-- GLOBE PANEL -->
 <div id="panel-globe" class="tool-panel">
   <div class="tool-header">
-    <span class="tool-title">🌍 &nbsp;IP Geo Locator</span>
+    <span class="tool-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:7px"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/></svg>IP Geo Locator</span>
     <button class="tool-close" onclick="closeTool('globe')">✕ Close</button>
   </div>
   <div id="globe-ip-row">
@@ -625,7 +626,7 @@ input,button{font-family:inherit;}
 <!-- WIFI PANEL -->
 <div id="panel-wifi" class="tool-panel">
   <div class="tool-header">
-    <span class="tool-title">📡 &nbsp;Wi-Fi Sniffer</span>
+    <span class="tool-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:7px"><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 13a9 9 0 0 1 14 0"/><path d="M2 9.5a13 13 0 0 1 20 0"/></svg>Wi-Fi Sniffer</span>
     <button class="tool-close" onclick="closeTool('wifi')">✕ Close</button>
   </div>
   <div id="wifi-scan-bar">
@@ -639,7 +640,7 @@ input,button{font-family:inherit;}
 <!-- REMOTE PANEL -->
 <div id="panel-remote" class="tool-panel">
   <div class="tool-header">
-    <span class="tool-title">💻 &nbsp;Remote Access</span>
+    <span class="tool-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:7px"><rect x="2" y="3" width="20" height="15" rx="2"/><polyline points="8,10 11,13 8,16"/><line x1="13" y1="16" x2="17" y2="16"/></svg>Remote Access</span>
     <button class="tool-close" onclick="closeTool('remote')">✕ Close</button>
   </div>
   <div id="remote-output"></div>
@@ -652,7 +653,7 @@ input,button{font-family:inherit;}
 <!-- SOUND PANEL -->
 <div id="panel-sound" class="tool-panel">
   <div class="tool-header">
-    <span class="tool-title">🎙 &nbsp;Sound Sniffer</span>
+    <span class="tool-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:7px"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>Sound Sniffer</span>
     <button class="tool-close" onclick="closeTool('sound')">✕ Close</button>
   </div>
   <div id="sound-status">
