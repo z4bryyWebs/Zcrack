@@ -447,6 +447,7 @@ input,button{font-family:inherit;}
 .tool-body{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;z-index:1;-webkit-overflow-scrolling:touch;}
 
 /* ── GLOBE ───────────────────────────────────────────────────────── */
+#panel-globe{overflow-y:auto;}
 #globe-ip-row{
   display:flex;gap:8px;padding:12px 16px;
   border-bottom:1px solid var(--border);
@@ -479,7 +480,7 @@ input,button{font-family:inherit;}
   min-height:76px;max-height:160px;overflow-y:auto;
   font-family:'SF Mono','Menlo','Courier New',monospace;
 }
-#globe-canvas{display:block;width:100%;aspect-ratio:1/1;max-height:70vw;position:relative;z-index:1;overflow:hidden;}
+#globe-canvas{display:block;width:100%;max-width:520px;height:auto;min-height:180px;position:relative;z-index:1;margin:0 auto;}
 
 /* ── WIFI ────────────────────────────────────────────────────────── */
 #wifi-scan-bar{
@@ -495,6 +496,13 @@ input,button{font-family:inherit;}
 #wifi-scan-progress{flex:1;height:2px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;}
 #wifi-scan-fill{height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width .09s;}
 #wifi-net-count{font-size:11px;letter-spacing:.3px;color:var(--text-3);white-space:nowrap;font-weight:500;}
+#wifi-rescan-btn{
+  background:rgba(80,255,140,.08);border:1px solid rgba(80,255,140,.3);
+  color:var(--green,#4ffe98);font-size:16px;line-height:1;padding:4px 9px;border-radius:8px;
+  cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;
+  transition:background .12s,transform .1s;
+}
+#wifi-rescan-btn:active{background:rgba(80,255,140,.22);transform:scale(.9);}
 .wifi-network{
   display:flex;align-items:center;padding:14px 16px;
   border-bottom:1px solid var(--border);gap:12px;
@@ -702,6 +710,7 @@ input,button{font-family:inherit;}
     <span id="wifi-scan-label">SCANNING...</span>
     <div id="wifi-scan-progress"><div id="wifi-scan-fill"></div></div>
     <span id="wifi-net-count">0 NET</span>
+    <button id="wifi-rescan-btn" title="Rescan">⟳</button>
   </div>
   <div id="wifi-list" class="tool-body"></div>
 </div>
@@ -1656,12 +1665,9 @@ function closeTool(name){
     try{
       const body=await _fetchJSON(`/api/geo?ip=${encodeURIComponent(ip)}`,10000);
       if(body&&body.ok) return body.data;
-      if(body&&!body.ok) throw new Error(body.error||'Server error');
+      // Server returned a structured error — fall through to direct APIs
     }catch(e){
-      // If it's a real server error (not just "not running"), bubble it up
-      if(e.message&&!e.message.includes('JSON')&&!e.message.includes('NetworkError')&&!e.message.includes('Failed to fetch')&&!e.message.includes('Load failed')&&!e.message.includes('aborted')){
-        // server returned a structured error — still try direct fallback
-      }
+      // Network error means server not running — fall through silently
     }
     // 2) Fallback: direct browser CORS API calls
     const errors=[];
@@ -1671,7 +1677,7 @@ function closeTool(name){
         return src.parse(d);
       }catch(e){errors.push(src.name+': '+e.message);}
     }
-    throw new Error('All sources failed — '+errors.join(' | '));
+    throw new Error('Lookup failed. Is server.py running? Details: '+errors.join(' | '));
   }
 
   function renderGeoResult(info){
@@ -1712,8 +1718,9 @@ function closeTool(name){
       renderGeoResult(info);
     }catch(e){
       res.innerHTML=`<span style="color:#ff5f5f">⚠ ${e.message}</span>`;
+    }finally{
+      pending=false;
     }
-    pending=false;
   });
   document.getElementById('globe-ip-input').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('globe-lookup-btn').click();});
   window._startGlobe=startGlobe;
@@ -1781,24 +1788,32 @@ function closeTool(name){
       const r=await fetch('/api/wifi',{signal:AbortSignal.timeout(14000)});
       const body=await r.json();
       if(!body.ok) throw new Error(body.error||'server error');
-      if(!body.data.length) throw new Error('no networks returned');
+      if(!body.data||!body.data.length) throw new Error('no networks found — check Wi-Fi adapter');
       nets=body.data;
       liveMode=true;
       if(lbl){lbl.textContent='LIVE ↺';lbl.style.color='var(--green)';}
       scanFill=100;
     }catch(e){
       liveMode=false;
+      const msg=e.message||'';
+      const isServerDown=msg.includes('Failed to fetch')||msg.includes('NetworkError')||msg.includes('Load failed');
       fakeScan();
-      if(lbl){lbl.textContent='DEMO ↺';lbl.style.color='var(--yellow)';}
+      if(lbl){
+        lbl.textContent=isServerDown?'DEMO — start server.py ↺':'DEMO ↺';
+        lbl.style.color='var(--yellow)';
+        lbl.title=isServerDown?'Run: python server.py to get real scans':msg;
+      }
     }
     nets.sort((a,b)=>b.sig-a.sig);
     render();
   }
 
-  // ── rescan on label tap ──
+  // ── rescan on label tap or rescan button ──
   document.addEventListener('DOMContentLoaded',()=>{
     const lbl=document.getElementById('wifi-scan-label');
     if(lbl){lbl.style.cursor='pointer';lbl.title='Tap to rescan';lbl.addEventListener('click',()=>liveScan());}
+    const btn=document.getElementById('wifi-rescan-btn');
+    if(btn){btn.addEventListener('click',()=>liveScan());}
   });
 
   window._startWifi=function(){liveScan();if(!wIv)wIv=setInterval(tick,180);};

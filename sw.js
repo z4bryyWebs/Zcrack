@@ -1,4 +1,4 @@
-const CACHE = 'zcrack-v6';
+const CACHE = 'zcrack-v7';
 // Large video is fetched on demand and cached by the fetch handler below.
 const ASSETS = ['./index.html', './manifest.json', './icon.svg'];
 
@@ -15,11 +15,24 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const url = e.request.url;
+  // Never cache API calls or external geo/wifi services — always fetch live
+  if (url.includes('/api/') ||
+      url.includes('ipwho.is') ||
+      url.includes('freeipapi.com') ||
+      url.includes('ipapi.co') ||
+      url.includes('ip-api.com')) {
+    e.respondWith(fetch(e.request));
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request).then(res => {
-      const clone = res.clone();
-      caches.open(CACHE).then(c => c.put(e.request, clone));
+      // Only cache successful same-origin static assets
+      if (res.ok && e.request.url.startsWith(self.location.origin)) {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+      }
       return res;
-    }))
+    }).catch(() => caches.match('./index.html')))
   );
 });

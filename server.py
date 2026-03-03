@@ -156,13 +156,28 @@ def _ch_to_band(ch: int) -> str:
     return '6 GHz'
 
 def _wifi_windows() -> list:
+    # First check if Wi-Fi adapter is enabled
+    chk = subprocess.run(
+        ['netsh', 'wlan', 'show', 'interfaces'],
+        capture_output=True, timeout=8)
+    try:
+        chk_text = chk.stdout.decode('utf-8')
+    except UnicodeDecodeError:
+        chk_text = chk.stdout.decode('cp850', errors='replace')
+    if not chk_text.strip() or 'there is' not in chk_text.lower() and 'rozhran' not in chk_text.lower() and 'interface' not in chk_text.lower():
+        raise RuntimeError('No Wi-Fi adapter found or Wi-Fi is disabled')
+
     r = subprocess.run(
         ['netsh', 'wlan', 'show', 'networks', 'mode=bssid'],
-        capture_output=True, timeout=12)
+        capture_output=True, timeout=15)
     try:
         text = r.stdout.decode('utf-8')
     except UnicodeDecodeError:
         text = r.stdout.decode('cp850', errors='replace')
+
+    if r.returncode != 0 or not text.strip():
+        stderr = r.stderr.decode('utf-8', errors='replace').strip()
+        raise RuntimeError(f'netsh failed (rc={r.returncode}): {stderr or "no output"}')
 
     nets = []
     ssid = ''; auth = 'WPA2'
@@ -199,6 +214,8 @@ def _wifi_windows() -> list:
         m = re.match(r'^\s*(?:Channel|Kan[aá]l)\s*:\s*(\d+)', line, re.IGNORECASE)
         if m: ch = int(m.group(1)); continue
     flush()
+    if not nets:
+        raise RuntimeError('No networks found — check Wi-Fi is enabled and within range')
     nets.sort(key=lambda n: -n['sig'])
     return nets
 
